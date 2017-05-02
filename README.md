@@ -15,21 +15,27 @@ $ npm install react-progressive-image-loading --save
 ## Usage
 
 ```jsx
-<ProgressiveImage preview="/images/tiny-preview.png" src="/images/preview.png" />
+<ProgressiveImage preview="/images/tiny-preview.png" src="/images/preview.png">
+{(src, style) => <img src={src} style={style} />}
+</ProgressiveImage>
 ```
 
-Instead of using the `img` tag, you can use `background=true` that will generate a `div` with `background-image` as inlined css.
+Instead of using the `img` tag, you can use `background-image` with a `div`.
 
 ```jsx
-<ProgressiveImage preview="/images/tiny-preview.png" src="/images/preview.png" background={true} />
+<ProgressiveImage preview="/images/tiny-preview.png" src="/images/preview.png">
+{(src, style) => <div style={Object.assign(style, { backgroundImage: `url(${src})` })} />}
+</ProgressiveImage>
 ```
 
 You can also customize the transition time and the timing function used for that transition.
 
 ```jsx
-<ProgressiveImage preview="/images/tiny-preview.png"
-                  src="/images/preview.png"
-                  transitionTime={500}
-                  transitionFunction="ease"
-/>
+<ProgressiveImage
+    preview="/images/tiny-preview.png"
+    src="/images/preview.png"
+    transitionTime={500}
+    transitionFunction="ease">
+{(src, style) => <img src={src} style={style} />}
+</ProgressiveImage>
 ```
