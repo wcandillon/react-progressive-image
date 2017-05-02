@@ -1,14 +1,11 @@
 import * as React from "react";
 
-export type DivProps = React.HTMLProps<HTMLImageElement>;
-export type ImageProps = React.HTMLProps<HTMLDivElement>;
-
 export interface ProgressiveImageProps {
     preview: string;
     src: string;
-    background?: boolean;
     transitionTime?: number;
     timingFunction?: string;
+    initialBlur: number;
 }
 
 export interface ProgressiveImageState {
@@ -16,31 +13,30 @@ export interface ProgressiveImageState {
     blur: number;
 }
 
-export class ProgressiveImage extends React.Component<ProgressiveImageProps & DivProps & ImageProps, ProgressiveImageState> {
-
-    private clonedProps: React.HTMLProps<HTMLDivElement & HTMLImageElement> = {};
+export class ProgressiveImage extends React.Component<ProgressiveImageProps, ProgressiveImageState> {
 
     static defaultProps = {
         transitionTime: 500,
-        timingFunction: "ease"
+        timingFunction: "ease",
+        initialBlur: 10
     };
 
     componentWillMount() {
         const {src, preview} = this.props;
-        this.setState({ src: "", blur: 10 });
-        this.cloneProps();
+        const initialBlur = this.props.initialBlur as number;
         this.fetch(preview)
-            .then(previewDataURI => this.setState({ src: previewDataURI, blur: 10 }))
+            .then(previewDataURI => this.setState({ src: previewDataURI, blur: initialBlur }))
             .then(() => this.fetch(src))
-            .then(srcDataURI => this.setState({ src: srcDataURI, blur: 0 }));
+            .then(srcDataURI => this.setState({ src: srcDataURI, blur: initialBlur }));
     }
+
     render() {
-        const {src, style, background} = this.props;
-        return background ?
-            <div style={Object.assign(this.getBackgroundStyle(), style)} {...this.clonedProps}>{this.props.children}</div>
-            :
-            <img src={src} style={Object.assign(this.getStyle(), style)} {...this.clonedProps} />
-            ;
+        const {src} = this.state;
+        const {children} = this.props;
+        if (!children || typeof children !== 'function') {
+            throw new Error("ProgressiveImage requires a function as its only child");
+        }
+        return children(src, this.getStyle());
     }
 
     private fetch(src: string): Promise<string> {
@@ -51,12 +47,6 @@ export class ProgressiveImage extends React.Component<ProgressiveImageProps & Di
         });
     }
 
-    private cloneProps() {
-        Object.keys(this.props)
-            .filter(prop => ["style", "src", "preview", "background", "transitionTime", "timingFunction"].indexOf(prop) === -1)
-            .forEach(prop => this.clonedProps[prop] = this.props[prop]);
-    }
-
     private getStyle() {
         const {transitionTime, timingFunction} = this.props;
         const {blur} = this.state;
@@ -64,13 +54,5 @@ export class ProgressiveImage extends React.Component<ProgressiveImageProps & Di
             filter: `blur(${blur}px)`,
             transition: `filter ${transitionTime}ms ${timingFunction}`
         };
-    }
-
-    private getBackgroundStyle() {
-        const {src} = this.state;
-        const style = {
-            backgroundImage: `url(${src})`
-        };
-        return Object.assign(style, this.getStyle());
     }
 }
